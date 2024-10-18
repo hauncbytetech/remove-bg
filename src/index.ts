@@ -6,7 +6,7 @@ import multer, { MulterError } from 'multer';
 dotenv.config(); // Load environment variables
 
 const app = express();
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 3000;
 
 // Set up multer for file uploads with a 5MB limit
 const storage = multer.memoryStorage();
