@@ -1,6 +1,9 @@
-const express = require('express');
-const multer = require('multer');
-const { removeBackground } = require('@imgly/background-removal-node');
+import { removeBackground } from '@imgly/background-removal-node';
+import dotenv from 'dotenv';
+import express, { NextFunction, Request, Response } from 'express';
+import multer, { MulterError } from 'multer';
+
+dotenv.config(); // Load environment variables
 
 const app = express();
 const PORT = process.env.PORT || 4001;
@@ -9,11 +12,11 @@ const PORT = process.env.PORT || 4001;
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5 MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
 });
 
 // Middleware to log request information with emojis
-const logRequestInfo = (req: any, res: any, next: any) => {
+const logRequestInfo = (req: Request, res: Response, next: NextFunction) => {
   const requestAt = new Date().toISOString();
   const userAgent = req.headers['user-agent'];
   const host = req.headers.host;
@@ -24,13 +27,24 @@ const logRequestInfo = (req: any, res: any, next: any) => {
   console.log(`🌐 Host: ${host}`);
   console.log(`📍 IP: ${ip}`);
 
-  // Attach requestAt to the req object so it can be used later
-  req.requestAt = requestAt;
   next(); // Proceed to the next middleware or route handler
 };
 
+// Middleware to check API key
+const checkApiKey = (req: Request, res: any, next: NextFunction) => {
+  const apiKey = req.headers['pango-api-key']; // Get API key from headers
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid API key' });
+  }
+  next(); // Proceed to the next middleware or route handler
+};
+
+app.get('/ping', logRequestInfo, (req: Request, res: Response) => {
+  res.send('Pong!!');
+});
+
 // API endpoint to remove background
-app.post('/remove-background', logRequestInfo, upload.single('image'), async (req: any, res: any) => {
+app.post('/remove-background', logRequestInfo, checkApiKey, upload.single('image'), async (req: any, res: any) => {
   try {
     if (!req.file) {
       console.log('⚠️ No file uploaded');
@@ -41,7 +55,7 @@ app.post('/remove-background', logRequestInfo, upload.single('image'), async (re
     if (!allowedTypes.includes(req.file.mimetype)) {
       console.log('❌ Invalid file type');
       return res.status(400).json({
-        error: `Invalid file type '${req.file.mimetype}'. Only JPEG and PNG are allowed.`
+        error: `Invalid file type '${req.file.mimetype}'. Only JPEG and PNG are allowed.`,
       });
     }
 
@@ -66,16 +80,15 @@ app.post('/remove-background', logRequestInfo, upload.single('image'), async (re
       res.status(200).send(buffer);
       console.log('✅ Background removed successfully');
     });
-
-  } catch (error) {
+  } catch (error: any) {
     console.error('❗Error removing background:', error);
     res.status(500).json({ error: 'Failed to remove background' });
   }
 });
 
 // Error handler for file size limit
-app.use((err: any, req: any, res: any, next: any) => {
-  if (err instanceof multer.MulterError) {
+app.use((err: any, req: Request, res: any, next: NextFunction) => {
+  if (err instanceof MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ error: '❗File size exceeds 5MB limit' });
     }
