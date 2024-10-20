@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@types/async": "^3.2.24",
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.7.6",
@@ -37,7 +38,7 @@
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.3"
   },
-  "pre-commit":[
+  "pre-commit": [
     "build"
   ]
 }
