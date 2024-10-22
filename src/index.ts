@@ -40,8 +40,7 @@ const logRequest = (req: Request, res: Response, next: NextFunction) => {
 
   console.log(`=============================================\n🕒Request at: ${requestAt}`);
   console.log(`💻User Agent: ${userAgent || 'Unknown'}`);
-  console.log(`📥URL: ${req.method} ${req.url}`);
-  console.log(`🗓️Timestamp: ${requestAt}`);
+  console.log(`📥URL: ${req.method}${req.url}`);
 
   next();
 };
